@@ -28,6 +28,7 @@ module.exports = {
           300: "#191D31",
         },
         danger: "#F75555",
+        secondary: "#8B5DFF"
       },
     },
   },
