@@ -1,6 +1,11 @@
-from django.urls import path
-from .views import GalleryListCreateView
+#realstate_backend/galleries/urls.py
 
-urlpatterns = [
-    path('', GalleryListCreateView.as_view(), name='gallery-list-create'),
-]
+from rest_framework.routers import DefaultRouter
+from .views import GalleryViewSet
+
+
+router = DefaultRouter()
+router.register(r'galleries', GalleryViewSet, basename='gallery')
+
+
+urlpatterns = router.urls

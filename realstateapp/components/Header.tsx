@@ -1,19 +1,22 @@
 import { View, Text, Image } from "react-native";
 import React from "react";
+import { useGlobalContext } from "@/contexts/GlobalProvider";
 
 const Header = () => {
+  const { user } = useGlobalContext();
+  console.log(user);
   return (
     <View className="flex flex-row px-5 justify-between items-center mt-5">
       <View className="flex flex-row items-center">
         <Image
           source={{
-            uri: "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg",
+            uri: user?.avatar,
           }}
           className="size-12 rounded-full"
         />
         <View className="flex flex-col items-start ml-4 justify-center">
           <Text>Good Morning</Text>
-          <Text>Kaleb</Text>
+          <Text>{user?.name}</Text>
         </View>
       </View>
       <Image

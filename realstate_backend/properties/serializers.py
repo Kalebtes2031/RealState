@@ -1,13 +1,23 @@
 from rest_framework import serializers
 from .models import Property
-from users.serializers import AgentSerializer
 
-class PropertySerializer(serializers.ModelSerializer):
-    agent = AgentSerializer(read_only=True)
+
+class PropertyListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = ['id','name','address','type','price','created_at']
+
+
+class PropertyDetailSerializer(serializers.ModelSerializer):
+    agent = serializers.SerializerMethodField()
 
     class Meta:
         model = Property
-        fields = [
-            'id', 'name', 'type', 'address', 'description', 'price',
-            'bedrooms', 'bathrooms', 'created_at', 'agent'
-        ]
+        fields = '__all__'
+
+    def get_agent(self, obj):
+        return {
+            'id': obj.agent.id,
+            'display_name': obj.agent.user.display_name,
+            'email': obj.agent.user.email,
+        }

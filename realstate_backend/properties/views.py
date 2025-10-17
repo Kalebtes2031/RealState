@@ -1,22 +1,38 @@
-from rest_framework import generics, permissions
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Property
-from .serializers import PropertySerializer
+from .serializers import PropertyListSerializer, PropertyDetailSerializer
+from users.permissions import IsAgent
+from rest_framework.response import Response
 
-class PropertyListCreateView(generics.ListCreateAPIView):
+
+class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all().order_by('-created_at')
-    serializer_class = PropertySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filterset_fields = ['type']
+    search_fields = ['name', 'address', 'type']
+
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve']:
+            return PropertyDetailSerializer
+        return PropertyListSerializer
+
+    def get_permissions(self):
+        if self.action in ['create','update','partial_update','destroy']:
+            return [IsAuthenticated(), IsAgent()]
+        return [AllowAny()]
+
 
     def perform_create(self, serializer):
-        # Automatically attach the agent linked to current user
-        user = self.request.user
-        if hasattr(user, 'agent_profile'):
-            serializer.save(agent=user.agent_profile)
-        else:
-            raise PermissionError("Only agents can create properties")
+        # link agent automatically from request.user.agent_profile
+        agent = self.request.user.agent_profile
+        serializer.save(agent=agent)
 
 
-class PropertyDetailView(generics.RetrieveAPIView):
-    queryset = Property.objects.all()
-    serializer_class = PropertySerializer
-    permission_classes = [permissions.AllowAny]
+    @action(detail=False, methods=['get'], url_path='latest')
+    def latest(self, request):
+        limit = int(request.query_params.get('limit', 5))
+        props = self.queryset[:limit]
+        serializer = PropertyListSerializer(props, many=True)
+        return Response(serializer.data)
