@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
+from datetime import timedelta 
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+REST_USE_JWT = True
+REST_USE_TOKEN = False
+DJREST_AUTH_TOKEN_MODEL = None
 
 # Application definition
 
@@ -41,6 +45,13 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'djoser',
     'corsheaders',
+    'django_filters',
+    'dj_rest_auth',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'dj_rest_auth.registration',
     'users',
     'properties',
     'galleries',
@@ -51,6 +62,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     "corsheaders.middleware.CorsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -137,10 +149,54 @@ AUTH_USER_MODEL = 'users.User'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
+}
+
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': [
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-    ],
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 12,
+}
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+
+# Djoser settings (token management / serializers)
+DJOSER = {
+    'USER_ID_FIELD': 'id',
+    'LOGIN_FIELD': 'email',
+    'HIDE_USERS': False,
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserCreateSerializer',  # points to our custom serializer
+        'user': 'users.serializers.UserSerializer',
+    }
+}
+
+
+
+# allauth / socialauth settings
+SITE_ID = 1
+
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'  # points to the username field
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*', 'username*']
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+    }
 }

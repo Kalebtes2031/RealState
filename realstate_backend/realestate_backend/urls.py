@@ -6,9 +6,16 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # Auth (Djoser + JWT)
-    path('api/auth/', include('djoser.urls')),
-    path('api/auth/', include('djoser.urls.jwt')),
+     # Users, authentication, JWT, registration
+    path('api/auth/', include('dj_rest_auth.urls')),  # login, logout, password change/reset
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),  # signup
+
+    # Djoser endpoints (optional, if you want extra user management)
+    path('api/djoser/', include('djoser.urls')),  
+    path('api/djoser/', include('djoser.urls.jwt')),  # JWT token endpoints
+
+    # Allauth social login (Google)
+    path('api/auth/social/', include('allauth.socialaccount.urls')),
 
     # Apps
     path('api/users/', include('users.urls')),
