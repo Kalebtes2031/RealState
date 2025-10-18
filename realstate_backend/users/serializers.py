@@ -1,6 +1,8 @@
 #realstate_backend/users/serializers.py
+from dj_rest_auth.serializers import JWTSerializerWithExpiration
 from rest_framework import serializers
 from .models import User, Agent
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -30,6 +32,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
         user.save()
         return user
     
+class CustomJWTSerializer(JWTSerializerWithExpiration):
+    refresh = serializers.CharField()
+    
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Add the refresh token if available
+        if "refresh" in instance:
+            data["refresh"] = instance["refresh"]
+        return data
+    
+        
 class AgentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 

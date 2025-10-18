@@ -28,9 +28,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-REST_USE_JWT = True
-REST_USE_TOKEN = False
-DJREST_AUTH_TOKEN_MODEL = None
 
 # Application definition
 
@@ -41,17 +38,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt',
-    'djoser',
-    'corsheaders',
-    'django_filters',
     'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'djoser',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'dj_rest_auth.registration',
+    'corsheaders',
+    'django_filters',
     'users',
     'properties',
     'galleries',
@@ -62,12 +61,12 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     "corsheaders.middleware.CorsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'realestate_backend.urls'
@@ -149,12 +148,10 @@ AUTH_USER_MODEL = 'users.User'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-REST_AUTH_SERIALIZERS = {
-    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication', 
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_FILTER_BACKENDS': (
@@ -170,29 +167,40 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+}
+
+REST_USE_JWT = True
+REST_USE_TOKEN = False
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_COOKIE': 'access',
+    'JWT_AUTH_REFRESH_COOKIE': 'refresh',
+    'TOKEN_MODEL': None, 
+}
+REST_AUTH_SERIALIZERS = {
+    'JWT_SERIALIZER': 'users.serializers.CustomJWTSerializer', 
 }
 
 
-# Djoser settings (token management / serializers)
 DJOSER = {
     'USER_ID_FIELD': 'id',
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user_create': 'users.serializers.UserCreateSerializer',  # points to our custom serializer
+        'user_create': 'users.serializers.UserCreateSerializer',
         'user': 'users.serializers.UserSerializer',
     }
 }
 
+# Allauth / social auth
 
-
-# allauth / socialauth settings
 SITE_ID = 1
-
-
-ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'  # points to the username field
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*', 'username*']
-ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Use LOGIN_METHODS internally
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
