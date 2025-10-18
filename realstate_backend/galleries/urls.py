@@ -1,11 +1,15 @@
 #realstate_backend/galleries/urls.py
+from django.urls import path
+from .views import (
+    GalleryCreateView,
+    GalleryDetailView,
+    GalleryUpdateView,
+    GalleryDeleteView,
+)
 
-from rest_framework.routers import DefaultRouter
-from .views import GalleryViewSet
-
-
-router = DefaultRouter()
-router.register(r'galleries', GalleryViewSet, basename='gallery')
-
-
-urlpatterns = router.urls
+urlpatterns = [
+    path('', GalleryCreateView.as_view(), name='gallery-create'),
+    path('<int:pk>/', GalleryDetailView.as_view(), name='gallery-detail'),
+    path('<int:pk>/update/', GalleryUpdateView.as_view(), name='gallery-update'),
+    path('<int:pk>/delete/', GalleryDeleteView.as_view(), name='gallery-delete'),
+]
