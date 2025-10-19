@@ -18,7 +18,7 @@ urlpatterns = [
     path('api/auth/social/', include('allauth.socialaccount.urls')),
 
     # Apps
-    path('api/users/', include('users.urls')),
+    path('api/', include('users.urls')),
     path('api/properties/', include('properties.urls')),
     path('api/galleries/', include('galleries.urls')),
     path('api/reviews/', include('reviews.urls')),

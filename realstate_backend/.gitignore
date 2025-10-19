@@ -1,0 +1,96 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build / output
+dist/
+build/
+.out/
+out/
+coverage/
+.cache/
+.next/
+.nuxt/
+.vite/
+public/build/
+
+# Environment / secrets
+.env
+.env.*.local
+.env.local
+.env.production
+.env.test
+*.key
+*.pem
+*.secrets
+secrets.json
+
+# Logs and runtime
+logs/
+*.log
+pids/
+*.pid
+*.seed
+tmp/
+temp/
+*.tmp
+
+# Database / storage
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+storage/
+uploads/
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+.Dockerfile*
+
+# Tests / reports
+test-results/
+report/
+coverage/
+
+# IDEs / editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~.nib
+*.iml
+
+# JetBrains
+.idea/
+*.iws
+*.ipr
+
+# Visual Studio Code settings
+.vscode/* 
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Mac / Linux swap
+*~
+*.swp
+.session
+
+# Misc
+*.log.*
+/dist-*/ 
+archive/
+*.bak
+*.orig
