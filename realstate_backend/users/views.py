@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 
 GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET = settings.GOOGLE_CLIENT_SECRET
-REDIRECT_URI = "http://localhost:8000/api/auth/callback"  # this will be registered in Google Console
+REDIRECT_URI = "https://realstate-backend-38v0.onrender.com/api/auth/callback"  # this will be registered in Google Console
 
 def google_authorize(request):
     """Redirect user to Google's OAuth 2.0 consent screen"""
