@@ -71,7 +71,7 @@ def google_callback(request):
 
     # decode our state to find where to send the app at the end
     state_data = _decode_state(state) if state else {}
-    client_redirect = state_data.get("client_redirect", "realstateapp://auth")
+    client_redirect = state_data.get("client_redirect", "realstateapp://signin")
 
     # Exchange authorization code for tokens
     token_url = "https://oauth2.googleapis.com/token"
