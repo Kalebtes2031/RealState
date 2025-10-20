@@ -16,7 +16,7 @@ class PropertyListView(APIView):
 
     def get(self, request):
         properties = Property.objects.all().order_by('-created_at')
-        serializer = PropertyListSerializer(properties, many=True)
+        serializer = PropertyListSerializer(properties, many=True, context={'request': request})
         return Response(serializer.data)
 
 
