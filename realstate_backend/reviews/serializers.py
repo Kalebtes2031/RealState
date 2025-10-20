@@ -1,3 +1,4 @@
+#realstate_backend/reviews/serializers.py
 from rest_framework import serializers
 from .models import Review
 from users.serializers import UserSerializer

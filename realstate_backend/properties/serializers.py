@@ -1,15 +1,23 @@
+#realstate_backend/properties/serializers.py
 from rest_framework import serializers
 from .models import Property
+from galleries.serializers import GallerySerializer
+from reviews.serializers import ReviewSerializer
 
 
 class PropertyListSerializer(serializers.ModelSerializer):
+    galleries = GallerySerializer(many=True, read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Property
-        fields = ['id','name','address','type','price','created_at']
+        fields = ['id','name','address','type','price', 'galleries', 'reviews', 'created_at']
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):
     agent = serializers.SerializerMethodField()
+    galleries = GallerySerializer(many=True, read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
 
     class Meta:
         model = Property

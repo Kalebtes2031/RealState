@@ -2,13 +2,13 @@
 from dj_rest_auth.serializers import JWTSerializerWithExpiration
 from rest_framework import serializers
 from .models import User, Agent
-
+from dj_rest_auth.registration.serializers import RegisterSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'email', 'display_name', 'avatar']
+        fields = ['id', 'email', 'username', 'display_name', 'avatar']
         read_only_fields = ['id']
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -27,11 +27,26 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         password = validated_data.pop('password')
+        
+        if not validated_data.get('display_name'):
+            validated_data['display_name'] = validated_data.get('username')
+        
         user = User(**validated_data)
         user.set_password(password)
         user.save()
         return user
-    
+
+
+
+class CustomRegisterSerializer(RegisterSerializer):
+    display_name = serializers.CharField(required=False, allow_blank=True)
+
+    def custom_signup(self, request, user):
+        display_name = self.validated_data.get('display_name') or user.username
+        user.display_name = display_name
+        user.save()
+        
+            
 class CustomJWTSerializer(JWTSerializerWithExpiration):
     refresh = serializers.CharField()
     
