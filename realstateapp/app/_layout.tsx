@@ -2,8 +2,29 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import "./global.css";
 import GlobalProvider from "@/contexts/GlobalProvider";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+
+// Create the query client with sensible defaults
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: true,
+      },
+    },
+  });
+
+  // Create a persistor for AsyncStorage
+  const asyncStoragePersister = createAsyncStoragePersister({
+    storage: AsyncStorage,
+  });
+
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -25,9 +46,21 @@ export default function RootLayout() {
     return null;
   }
 
+
   return (
     <GlobalProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      {/* PersistQueryClientProvider will persist the React Query cache to AsyncStorage */}
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister: asyncStoragePersister }}
+        onSuccess={() => {
+          // Refetch in background when cache is restored
+          queryClient.resumePausedMutations();
+          queryClient.invalidateQueries();
+        }}
+      >
+        <Stack screenOptions={{ headerShown: false }} />
+      </PersistQueryClientProvider>
     </GlobalProvider>
   );
 }
