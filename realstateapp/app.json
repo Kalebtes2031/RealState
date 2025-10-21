@@ -21,7 +21,8 @@
       },
       "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
-      "package": "com.kaleb.realstateapp"
+      "package": "com.kaleb.realstateapp",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
