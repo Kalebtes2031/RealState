@@ -16,55 +16,52 @@ import Header from "@/components/Header";
 import Search from "@/components/Search";
 import Featured from "@/components/Featured";
 import Recommendation from "@/components/Recommendation";
+import { useState, useMemo } from "react";
 
 export default function Index() {
-  const { data: properties, isLoading, isError, refetch, isFetching } = useProperties();
+  const {
+    data: properties,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+  } = useProperties();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const [selectedFilter, setSelectedFilter] = useState("All");
 
-  // Handle loading
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#007BFF" />
-        <Text className="text-gray-400 mt-2">Loading properties...</Text>
-      </SafeAreaView>
-    );
-  }
+  const filteredProperties = useMemo(() => {
+    if (!properties) return [];
+    if (selectedFilter === "All") return properties;
 
-  // Handle error
-  if (isError) {
-    return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
-        <Text className="text-red-500 font-rubik-medium mb-3">
-          Failed to load properties.
-        </Text>
-        <TouchableOpacity
-          onPress={() => refetch()}
-          className="px-4 py-2 bg-primary-300 rounded-full"
-        >
-          <Text className="text-white font-rubik-medium">Try Again</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+    return properties.filter((p) => {
+      const type = p.type?.toLowerCase() || "";
+      return type === selectedFilter.toLowerCase();
+    });
+  }, [properties, selectedFilter]);
 
   // Pad data to keep even columns
-  const paddedProperties: any[] = [...(properties || [])];
-  if (paddedProperties.length % 2 !== 0) {
-    paddedProperties.push({ id: -1, isPlaceholder: true });
-  }
+  const paddedProperties = (list?: any[]) => {
+  const safeList = Array.isArray(list) ? list : [];
+  const padded = [...safeList];
+  if (padded.length % 2 !== 0) padded.push({ id: -1, isPlaceholder: true });
+  return padded;
+};
+
 
   const handlePress = async (item: any) => {
+    // Build a small preview to show instantly on navigation.
+    // NOTE: keep field names consistent with the detail shape (use `bedrooms` not `beds`).
     const preview = {
       id: item.id,
       name: item.name,
       address: item.address,
       price: item.price,
       type: item.type,
-      galleries: item.galleries?.slice(0, 1),
+      // include a few gallery images in the preview so the detail page can show a small gallery immediately
+      galleries: item.galleries?.slice(0, 3),
       reviews: item.reviews?.slice(0, 1),
-      beds: item.beds,
+      bedrooms: item.bedrooms ?? item.beds ?? 0,
       bathrooms: item.bathrooms,
       area: item.area,
     };
@@ -117,10 +114,7 @@ export default function Index() {
           <Text className="text-base font-rubik-bold text-black-300">
             {item.name}
           </Text>
-          <Text
-            className="text-xs font-rubik text-black-100"
-            numberOfLines={1}
-          >
+          <Text className="text-xs font-rubik text-black-100" numberOfLines={1}>
             {item.address}
           </Text>
           <View className="flex flex-row items-center justify-between mt-2">
@@ -133,10 +127,44 @@ export default function Index() {
     );
   };
 
+  // Handle loading
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#007BFF" />
+        <Text className="text-gray-400 mt-2">Loading properties...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Handle error
+  if (isError) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-gray-100">
+        <Text className="text-red-500 font-rubik-medium mb-3">
+          Failed to load properties.
+        </Text>
+        <TouchableOpacity
+          onPress={() => refetch()}
+          className="px-4 py-2 bg-primary-300 rounded-full"
+        >
+          <Text className="text-white font-rubik-medium">Try Again</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <FlatList
-        data={paddedProperties}
+        data={paddedProperties(filteredProperties)}
+        ListEmptyComponent={() => (
+          <View className="flex-1 justify-center items-center mt-10">
+            <Text className="text-gray-500 font-rubik-medium">
+              No {selectedFilter.toLowerCase()} available.
+            </Text>
+          </View>
+        )}
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         renderItem={renderItems}
@@ -153,9 +181,12 @@ export default function Index() {
         ListHeaderComponent={() => (
           <View>
             <Header />
-            <Search />
+            <Search showFilter={false}/>
             <Featured />
-            <Recommendation />
+            <Recommendation
+              selected={selectedFilter}
+              setSelected={setSelectedFilter}
+            />
           </View>
         )}
       />

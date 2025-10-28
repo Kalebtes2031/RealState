@@ -1,3 +1,4 @@
+//realstateapp/app/_layout.tsx
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import "./global.css";
@@ -12,13 +13,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Create the query client with sensible defaults
   const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 1000 * 60 * 5,
-        refetchOnWindowFocus: true,
-      },
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60,            // 1 min = consider data fresh
+      gcTime: 1000 * 60 * 60 * 24,  // 24h in cache before GC
+      refetchOnWindowFocus: true,      // refetch when returning to app
+      refetchOnReconnect: true,        // refetch if user reconnects to network
+      retry: 1,                        // retry once on failure
     },
-  });
+  },
+});
+
 
   // Create a persistor for AsyncStorage
   const asyncStoragePersister = createAsyncStoragePersister({

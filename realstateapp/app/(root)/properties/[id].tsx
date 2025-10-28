@@ -3,83 +3,190 @@ import {
   Text,
   ScrollView,
   Image,
-  FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import React from "react";
-import { useLocalSearchParams } from "expo-router";
+import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Feather from "@expo/vector-icons/Feather";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Entypo from "@expo/vector-icons/Entypo";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { usePropertyDetail } from "@/hooks/useQueryHooks"; // Your hook
+import ImageGrid from "@/components/ImageGrid";
 
 const DetailInfo = () => {
+  const [showAllReview, setShowAllReview] = useState(false);
+  const router = useRouter();
   const params = useLocalSearchParams();
-  const { id, title, imgUrl, rating } = params;
-  console.log(id);
+  const { id, preview } = params;
 
-  const datas = [
+  // Parse preview data if passed
+  let previewData = null;
+  if (typeof preview === "string") {
+    try {
+      previewData = JSON.parse(preview);
+    } catch (e) {
+      previewData = null;
+    }
+  } else if (
+    Array.isArray(preview) &&
+    preview.length > 0 &&
+    typeof preview[0] === "string"
+  ) {
+    try {
+      previewData = JSON.parse(preview[0]);
+    } catch (e) {
+      previewData = null;
+    }
+  }
+
+  // Fetch full detail (with cache / memoization)
+  const {
+    data: property,
+    isLoading,
+    isError,
+  } = usePropertyDetail(id as string, {
+    initialData: previewData,
+  });
+
+  const displayData = property || previewData;
+
+  console.log("Display data: ", displayData);
+
+  if (isError || !displayData) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <Text>Failed to load property details.</Text>
+      </View>
+    );
+  }
+
+  // Only show ActivityIndicator if loading AND no preview
+  if (isLoading && !previewData) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  // Amenities fallback
+  const amenities = displayData?.amenities || [
     { icon: "car", title: "Car Parking" },
     { icon: "wifi", title: "Wi-Fi & Net" },
     { icon: "rest", title: "Restaurant" },
     { icon: "apartment", title: "Gym & Fit" },
-    { icon: "github", title: "Swimming" }, // Placeholder icon
-    { icon: "baidu", title: "Pet Center" }, // Placeholder icon
-    { icon: "Trophy", title: "Sport Center" }, // Placeholder icon
-    { icon: "book", title: "Laundry" }, // Placeholder icon
+    { icon: "github", title: "Swimming" },
+    { icon: "baidu", title: "Pet Center" },
+    { icon: "Trophy", title: "Sport Center" },
+    { icon: "book", title: "Laundry" },
   ];
 
-  const image1 = require("../../../assets/images/detailone.png");
-  const image2 = require("../../../assets/images/detail2.png");
-  const image3 = require("../../../assets/images/detail3.png");
-  const images = [{ image: image1 }, { image: image2 }, { image: image3 }];
-
-  const chunkArray = (array, size) => {
+  function chunkArray<T>(array: T[], size: number): T[][] {
     return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
       array.slice(i * size, i * size + size)
     );
-  };
+  }
+  const amenitiesChunks = chunkArray(amenities, 4);
 
-  const amenitiesChunks = chunkArray(datas, 4);
+  // Galleries (dynamic or fallback)
+  const images = displayData?.galleries?.map((g) => ({
+    image: { uri: g.image },
+  })) || [
+    require("../../../assets/images/detailone.png"),
+    require("../../../assets/images/detail2.png"),
+    require("../../../assets/images/detail3.png"),
+  ];
+
+  const timeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    const intervals: { [key: string]: number } = {
+      year: 31536000,
+      month: 2592000,
+      week: 604800,
+      day: 86400,
+      hour: 3600,
+      minute: 60,
+    };
+
+    for (const [unit, value] of Object.entries(intervals)) {
+      const count = Math.floor(seconds / value);
+      if (count >= 1) {
+        return `${count} ${unit}${count > 1 ? "s" : ""} ago`;
+      }
+    }
+    return "Just now";
+  };
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 relative">
+      <ScrollView
+        className="flex-1 relative"
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
         <Image
-          source={require("../../../assets/images/detailone.png")}
+          source={images[0]?.image}
           className="w-full h-[380px]"
+          resizeMode="cover"
         />
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="p-2 absolute top-3 left-3 bg-white rounded-full "
+        >
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
         <View className="px-5 pt-5 pb-16">
-          <Text className="font-bold text-lg">Modernica Apartment</Text>
-          <View className="flex flex-row gap-x-4 mt-2 items-center">
-            <Text className="rounded-full bg-gray-200 text-gray-500 font-semibold px-3 text-sm py-1 uppercase">
-              Apartment
+          {/* Title & Type */}
+          <Text className="font-rubik-bold text-2xl mb-2">
+            {displayData?.name || "Property Name"}
+          </Text>
+          <View className="flex flex-row gap-x-4 my-2 items-center">
+            <Text className="rounded-full bg-gray-200 text-secondary font-rubik-semibold px-3 text-sm py-1 uppercase">
+              {displayData?.type || "Type"}
             </Text>
             <View className="flex flex-row items-center gap-x-1">
               <AntDesign name="star" size={18} color="orange" />
-              <Text>4.8 (1,275 reviews)</Text>
+              <Text className="text-gray-500 font-bold font-rubik-bold">
+                {displayData?.reviews?.[0]?.rating ?? "-"} (
+                {displayData?.reviews?.length ?? 0} reviews)
+              </Text>
             </View>
           </View>
+
+          {/* Beds / Baths / Size */}
           <View className="mt-3 flex flex-row justify-between items-center">
             <View className="flex flex-row items-center gap-x-2">
-              <View className="bg-gray-200 p-2 rounded-full ">
-                <FontAwesome name="bed" size={16} color="gray" />
+              <View className="bg-gray-200 p-2 rounded-full">
+                <FontAwesome name="bed" size={16} color="#8B5DFF" />
               </View>
-              <Text className="text-[15px] font-semibold">8 Beds</Text>
+              <Text className="text-[15px] font-rubik-semibold">
+                {displayData?.bedrooms ?? 0} Beds
+              </Text>
             </View>
             <View className="flex flex-row items-center gap-x-2">
-              <View className="bg-gray-200 p-2 rounded-full ">
-                <FontAwesome name="bathtub" size={16} color="gray" />
+              <View className="bg-gray-200 p-2 rounded-full">
+                <FontAwesome name="bathtub" size={16} color="#8B5DFF" />
               </View>
-              <Text className="text-[15px] font-semibold">3 bath</Text>
+              <Text className="text-[15px] font-rubik-semibold">
+                {displayData?.bathrooms ?? 0} Bath
+              </Text>
             </View>
             <View className="flex flex-row items-center gap-x-2">
-              <View className="bg-gray-200 p-2 rounded-full ">
-                <AntDesign name="fullscreen" size={16} color="gray" />
+              <View className="bg-gray-200 p-2 rounded-full">
+                <AntDesign name="fullscreen" size={16} color="#8B5DFF" />
               </View>
-              <Text className="text-[15px] font-semibold">2000 sqft</Text>
+              <Text className="text-[15px] font-rubik-semibold">2000 sqft</Text>
             </View>
           </View>
+
+          <View className="mt-6 pt-[1px] bg-gray-200" />
+
+          {/* Agent Info */}
           <View className="mt-8">
             <Text className="font-bold text-[18px]">Agent</Text>
           </View>
@@ -87,12 +194,18 @@ const DetailInfo = () => {
             <View className="flex flex-row items-center">
               <Image
                 source={{
-                  uri: "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg",
+                  uri:
+                    displayData?.agent?.avatar ||
+                    "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg",
                 }}
                 className="size-12 rounded-full"
               />
               <View className="flex flex-col items-start ml-4 justify-center">
-                <Text>Natasya Wilodra</Text>
+                <Text>
+                  {displayData?.agent?.display_name ||
+                    displayData?.agent?.email.split("@")[0] ||
+                    "Agent Name"}
+                </Text>
                 <Text>Owner</Text>
               </View>
             </View>
@@ -101,14 +214,16 @@ const DetailInfo = () => {
               <Feather name="phone" size={24} color="gray" />
             </View>
           </View>
-          <Text className="font-bold text-[18px] mt-6 mb-2 ">Overview</Text>
+
+          {/* Overview / Description */}
+          <Text className="font-bold text-[18px] mt-6 mb-2">Overview</Text>
           <Text className="text-gray-400 font-rubik-bold leading-6">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptatum
-            minus, doloremque laboriosam laborum quod molestias nam recusandae
-            modi totam fugiat dicta assumenda consectetur soluta dolor non
-            provident exercitationem! Natus, minus.
+            {displayData?.description ||
+              "Lorem ipsum dolor sit amet consectetur adipisicing elit."}
           </Text>
-          <Text className="font-bold text-[18px] mt-6 mb-2 ">Facilities</Text>
+
+          {/* Facilities / Amenities */}
+          <Text className="font-bold text-[18px] mt-6 mb-2">Facilities</Text>
           <View className="py-5 space-y-5">
             {amenitiesChunks.map((chunk, rowIndex) => (
               <View
@@ -122,7 +237,7 @@ const DetailInfo = () => {
                   >
                     <View className="bg-gray-200 p-2 rounded-full w-12 items-center justify-center">
                       <AntDesign
-                        name={item.icon.toLowerCase()}
+                        name={item.icon.toLowerCase() as any}
                         size={24}
                         color="#8B5DFF"
                       />
@@ -135,72 +250,111 @@ const DetailInfo = () => {
               </View>
             ))}
           </View>
-          <Text className="font-bold text-[18px] mb-2 ">Gallery</Text>
-          <View className="w-full flex flex-row justify-between gap-x-4 items-center">
-            {images.map((image, idx) => (
-              <Image
-                key={idx}
-                source={image.image}
-                className="w-[30%] h-[100px]  rounded-2xl"
-              />
-            ))}
-          </View>
 
-          <Text className="font-bold text-[18px] mb-2 mt-4 ">Location</Text>
+          {/* Gallery */}
+          <Text className="font-rubik-bold text-[18px] mb-2">Gallery</Text>
+          <ImageGrid images={images as any} />
+
+          {/* Location */}
+          <Text className="font-rubik-bold text-[18px] mt-6 mb-2">
+            Location
+          </Text>
           <View className="flex flex-row items-center">
-            <MaterialIcons name="location-on" size={24} color="#8B5DFF" />
-            <Text className="font-semibold text-gray-400">
-              Grand City St. 100, New York, United States
+            <Entypo name="location-pin" size={24} color="#8B5DFF" />
+            <Text className="text-gray-400 font-rubik-medium">
+              {displayData?.address || "Unknown Location"}
             </Text>
           </View>
-          <View className="mt-3 flex flex-row justify-center items-center w-full">
+          <View>
             <Image
               source={require("../../../assets/images/map.png")}
-              className="w-[95%] rounded-3xl"
+              className="w-full h-40 rounded-lg mt-4"
+              resizeMode="cover"
             />
           </View>
-          <View className="mt-4 mb-6 flex flex-row justify-between items-center">
-            <View className="flex flex-row items-center gap-x-2">
-              <AntDesign name="star" size={18} color="orange" />
-              <Text className="font-bold text-md">4.8 (1,275 reviews)</Text>
+
+          {/* Reviews */}
+          <View className="mt-6 flex flex-col gap-6">
+            <View className="flex flex-row justify-between items-center">
+              <View className="flex flex-row items-center gap-x-1">
+                <AntDesign name="star" size={18} color="orange" />
+                <Text className="text-2xl font-rubik-bold">
+                  {displayData?.reviews?.[0]?.rating ?? "-"} (
+                  {displayData?.reviews?.length ?? 0} reviews)
+                </Text>
+              </View>
+
+              {displayData?.reviews?.length > 1 && (
+                <TouchableOpacity
+                  onPress={() => setShowAllReview(!showAllReview)}
+                >
+                  <Text className="text-secondary text-xl font-rubik-semibold">
+                    {showAllReview ? "Show Less" : "See All"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <Text className="text-secondary font-bold text-md">See All</Text>
-          </View>
-          <View className="flex flex-row items-center">
-            <Image
-              source={{
-                uri: "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg",
-              }}
-              className="size-10 rounded-full"
-            />
-            <Text className="ml-2 font-bold">Charolette Hanlin</Text>
-          </View>
-          <Text className="mt-4 text-gray-600 leading-5 ">
-            The apartment is very clean and modern. I really like the interior
-            design. Looks like I'll feel at home 😍
-          </Text>
-          <View className=" mt-4 mb-12 flex flex-row justify-between">
-            <View className="flex flex-row items-center gap-x-2">
-              <Feather name="heart" size={20} color="gray" />
-              <Text className="font-bold">938</Text>
+
+            <View>
+              {displayData?.reviews?.length > 0 ? (
+                (showAllReview
+                  ? displayData.reviews
+                  : displayData.reviews.slice(0, 1)
+                ).map((review, idx) => (
+                  <View key={idx} className="mb-4">
+                    <View className="flex flex-row items-center gap-x-3">
+                      <Image
+                        source={{
+                          uri:
+                            review.user.avatar ||
+                            "https://t3.ftcdn.net/jpg/02/43/12/34/360_F_243123463_zTooub557xEWABDLk0jJklDyLSGl2jrr.jpg",
+                        }}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <View>
+                        <Text className="font-bold">
+                          {review.user.display_name || review.user.username}
+                        </Text>
+                        <View className="flex flex-row items-center gap-x-1">
+                          <AntDesign name="star" size={16} color="orange" />
+                          <Text>{review.rating}</Text>
+                        </View>
+                      </View>
+                    </View>
+                    <Text className="mt-1 text-gray-600">{review.comment}</Text>
+                    <View className="flex flex-row justify-end mt-2">
+                      <Text className="text-gray-400 text-end text-sm">
+                        {timeAgo(review.created_at)}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text className="text-gray-400">No reviews yet.</Text>
+              )}
             </View>
-            <Text className="text-gray-500">6 days ago</Text>
           </View>
         </View>
       </ScrollView>
-      <View className="bg-white w-full absolute bottom-0 px-6 py-5 rounded-t-3xl shadow-xl border-t border-r border-l border-gray-200">
+
+      {/* Footer / Booking */}
+      <View className="bg-white w-full px-6 py-5 rounded-t-3xl shadow-xl border-t border-r border-l border-gray-200 absolute bottom-0">
         <View className="flex flex-row justify-between items-center">
-          <View>
-            <Text className="uppercase text-gray-500 tracking-widest font-semibold">
-              {" "}
+          {/* Price Section */}
+          <View className="flex-1">
+            <Text className="font-rubik-semibold text-gray-500 uppercase text-xs tracking-widest">
               Price
             </Text>
-            <Text className="uppercase text-secondary tracking-widest text-[20px] font-bold">
-              $17821
+            <Text className="font-rubik-bold text-secondary text-xl mt-1">
+              ${displayData?.price ?? 0}
             </Text>
           </View>
-          <TouchableOpacity className="bg-secondary px-16 py-4 rounded-full">
-            <Text className="text-white font-bold">Booking Now</Text>
+
+          {/* Booking Button */}
+          <TouchableOpacity className="bg-secondary px-8 py-3 rounded-full shadow-md">
+            <Text className="font-rubik-bold text-white text-base">
+              Booking Now
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
