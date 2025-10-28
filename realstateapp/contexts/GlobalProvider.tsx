@@ -1,3 +1,4 @@
+//realstatapp/contexts/GlobalProvider.tsx
 import React, { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import api from "@/utils/api";

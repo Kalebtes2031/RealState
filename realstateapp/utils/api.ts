@@ -2,6 +2,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import * as SecureStore from "expo-secure-store";
 
+// const API_URL = "http://10.99.161.130:8000";
 const API_URL = "http://192.168.100.51:8000";
 const ACCESS_TOKEN_KEY = "realstate_access_token";
 

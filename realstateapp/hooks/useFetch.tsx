@@ -1,6 +1,5 @@
 // hooks/useFetch.ts
-import { useEffect, useState, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import api from "@/utils/api";
 import type { Property } from "@/types/Property";
 
