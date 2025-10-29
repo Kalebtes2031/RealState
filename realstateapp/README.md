@@ -1,50 +1,133 @@
-# Welcome to your Expo app 👋
+Ah! This is a great question about **React Query’s caching and automatic updates**. Let’s break it down carefully with respect to your setup.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+---
 
-## Get started
+### 1. **Your current React Query setup**
 
-1. Install dependencies
+In `_layout.tsx`, your `QueryClient` defaults are:
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```ts
+defaultOptions: {
+  queries: {
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true,
+  },
+},
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+And in your hooks, you also have `staleTime` per query (like 2 or 5 minutes).
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+### 2. **What this means for fresh data**
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+#### **`staleTime`**
 
-## Join the community
+* `staleTime` is the period during which cached data is considered **fresh**.
+* If the cached data is **fresh**, React Query **will not refetch** from the server automatically.
+* Once the cached data becomes **stale** (i.e., `staleTime` has passed), React Query will refetch automatically **on certain triggers**:
 
-Join our community of developers creating universal apps.
+#### **Triggers for refetch**
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. **Window/screen focus** (`refetchOnWindowFocus: true`)
+
+   * When you navigate away from the app and come back, any **stale queries** will refetch automatically.
+2. **Manual invalidation**
+
+   * You can call `queryClient.invalidateQueries(["properties"])` to force a refetch.
+3. **Mounting**
+
+   * If a query is mounted **after `staleTime` has expired**, it triggers a fetch.
+4. **Interval polling**
+
+   * If you set `refetchInterval`, React Query will poll automatically.
+
+---
+
+### 3. **Your specific hooks**
+
+* `useProperties()` has `staleTime: 2 min`
+  → Cached data is fresh for **2 minutes**, after that it becomes stale.
+* `usePropertyDetail()` has `staleTime: 5 min`
+  → Cached detail data is fresh for **5 minutes**.
+
+**Implications:**
+
+* If a new property is added in the backend, your app **will not automatically see it immediately** if the cached data is still fresh.
+* After the stale time passes (2 min for `properties`), the next time the query is accessed (or the user focuses the app), React Query **will fetch the latest data**.
+
+---
+
+### 4. **With Persisted Cache (`PersistQueryClientProvider`)**
+
+* You’re persisting cache to AsyncStorage, so even after closing the app, the last cached data is restored.
+* On restore, the `onSuccess` callback calls:
+
+```ts
+queryClient.invalidateQueries();
+```
+
+* This **forces a refetch of all queries** immediately after restoring cache, so your app will get fresh data at startup.
+
+---
+
+### 5. **When the user sees new backend data**
+
+With your current setup:
+
+| Scenario                                    | When new data appears in UI                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| App running, user has property list mounted | After **2 min**, then on focus or mount, it refetches                                            |
+| User navigates to detail page               | If detail query is fresh (5 min), cached preview is used; after 5 min it refetches automatically |
+| App closed and reopened                     | On restore, `invalidateQueries()` triggers refetch immediately                                   |
+
+---
+
+### ✅ 6. **How to see new data faster**
+
+If you want **near real-time updates**, you can:
+
+1. **Decrease `staleTime`**:
+
+```ts
+staleTime: 1000 * 30 // 30 seconds
+```
+
+2. **Enable polling**:
+
+```ts
+useQuery({
+  queryKey: ["properties"],
+  queryFn: fetchProperties,
+  refetchInterval: 1000 * 30, // refetch every 30s
+});
+```
+
+3. **Manually invalidate after mutations**
+   If you have a "Create Property" API, call:
+
+```ts
+queryClient.invalidateQueries(["properties"]);
+```
+
+---
+
+### **Summary**
+
+* React Query **does not constantly poll** the server by default.
+
+* Cached data is considered **fresh for `staleTime`** and won’t refetch until stale.
+
+* With your setup:
+
+  * Property list: 2 min fresh → refetch on focus or after stale
+  * Property detail: 5 min fresh → refetch on focus or after stale
+  * Persisted cache triggers immediate refetch on app restore
+
+* To see new backend data faster, either **reduce staleTime**, **use polling**, or **manually invalidate queries**.
+
+---
+
+If you want, I can draw a **timeline diagram showing exactly when `properties` and `property detail` get updated** for your current setup — it makes it super clear.
+
+Do you want me to do that?
