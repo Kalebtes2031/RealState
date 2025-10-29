@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import BottomModal from "@/components/BottomModal";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 
-const Search = () => {
+const Search = ({ showFilter = true }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [values, setValues] = useState([100, 1000]);
 
@@ -27,11 +27,13 @@ const Search = () => {
       <View className="mt-5  bg-gray-50  rounded-full px-4 flex flex-row items-center justify-between">
         <View className="flex flex-row items-center justify-center gap-x-4">
           <Ionicons name="search" size={20} color="gray" />
-          <TextInput placeholder="Search something" />
+          <TextInput className="font-rubik" placeholder="Search something" />
         </View>
-        <TouchableOpacity onPress={openBottomModal}>
-          <Ionicons name="filter" size={20} color="gray" />
-        </TouchableOpacity>
+        {showFilter && (
+          <TouchableOpacity onPress={openBottomModal}>
+            <Ionicons name="filter" size={20} color="gray" />
+          </TouchableOpacity>
+        )}
       </View>
       <BottomModal visible={isModalVisible} onClose={closeBottomModal}>
         <View className="mb-6 flex flex-row justify-between items-center">
