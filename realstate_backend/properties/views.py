@@ -1,5 +1,6 @@
 #realstate_backend/properties/views.py
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status,generics
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -9,15 +10,15 @@ from users.permissions import IsAgent
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.parsers import JSONParser
+from .filters import PropertyFilter
 
 # List all properties
-class PropertyListView(APIView):
+class PropertyListView(generics.ListAPIView):
+    queryset = Property.objects.all().order_by('-created_at')
+    serializer_class = PropertyListSerializer
     permission_classes = [AllowAny]
-
-    def get(self, request):
-        properties = Property.objects.all().order_by('-created_at')
-        serializer = PropertyListSerializer(properties, many=True, context={'request': request})
-        return Response(serializer.data)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PropertyFilter
 
 
 # Create a new property (agent only)
