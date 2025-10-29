@@ -9,9 +9,14 @@ class Property(models.Model):
         ('Condo', 'Condo'),
         ('House', 'House'),
     ]
+    CATEGORY_CHOICES = [
+        ('sale', 'For Sale'),
+        ('rent', 'For Rent'),
+    ]
 
     name = models.CharField(max_length=255)
     type = models.CharField(max_length=50, choices=PROPERTY_TYPES)
+    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default='sale')
     address = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=12, decimal_places=2)
